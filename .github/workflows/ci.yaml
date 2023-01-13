@@ -6,6 +6,11 @@ on:
 
 jobs:
   test:
+    services:
+      mongodb:
+        image: mongo:4
+        ports:
+        - 27017:27017
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
