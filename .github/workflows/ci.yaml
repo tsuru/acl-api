@@ -16,5 +16,10 @@ jobs:
 
       - uses: imjasonh/setup-ko@v0.6
         env:
-          KO_DOCKER_REPO: ghcr.io/tsuru/acl-api
-      - run: ko build
+          KO_DOCKER_REPO: tsuru/acl-api
+      - env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: |
+          echo "${DOCKERHUB_PASSWORD}" | ko login https://docker.io --username ${DOCKERHUB_USERNAME} --password-stdin
+          ko build
