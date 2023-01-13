@@ -16,5 +16,5 @@ jobs:
 
       - uses: imjasonh/setup-ko@v0.6
         env:
-          KO_DOCKER_REPO=ghcr.io/tsuru/acl-api
+          KO_DOCKER_REPO: ghcr.io/tsuru/acl-api
       - run: ko build
