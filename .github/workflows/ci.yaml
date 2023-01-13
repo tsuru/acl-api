@@ -17,11 +17,11 @@ jobs:
       - uses: imjasonh/setup-ko@v0.6
         env:
           KO_DOCKER_REPO: tsuru
-          KO_DEFAULTBASEIMAGE: alpine:3.17.1
-          KO_DEFAULTPLATFORMS: linux/arm64,linux/amd64
       - env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+          KO_DEFAULTBASEIMAGE: alpine:3.17.1
+          KO_DEFAULTPLATFORMS: linux/arm64,linux/amd64
         run: |
           echo "${DOCKERHUB_PASSWORD}" | ko login docker.io --username ${DOCKERHUB_USERNAME} --password-stdin
           ko build -B
