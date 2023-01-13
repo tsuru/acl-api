@@ -5,7 +5,18 @@ on:
     branches: ['main']
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: 1.19
+    - run: make test
+
   publish:
+    needs:
+    - test
     name: Publish
     runs-on: ubuntu-latest
     steps:
@@ -17,7 +28,7 @@ jobs:
           tag_with_sha: "true"
       - uses: actions/setup-go@v2
         with:
-          go-version: 1.18
+          go-version: 1.19
       - uses: actions/checkout@v2
 
       - uses: imjasonh/setup-ko@v0.6
