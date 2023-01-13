@@ -16,7 +16,7 @@ jobs:
 
       - uses: imjasonh/setup-ko@v0.6
         env:
-          KO_DOCKER_REPO: docker.io/tsuru/acl-api
+          KO_DOCKER_REPO: docker.io
       - env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
