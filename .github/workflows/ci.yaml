@@ -29,5 +29,6 @@ jobs:
           KO_DEFAULTBASEIMAGE: alpine:3.17.1
           TO_BUILD_TAG: ${{ steps.smarttag.outputs.tag }}
         run: |
+          echo "Lets build the tag: ${TO_BUILD_TAG}"
           echo "${DOCKERHUB_PASSWORD}" | ko login docker.io --username ${DOCKERHUB_USERNAME} --password-stdin
           ko build -B --platform linux/arm64,linux/amd64 -t ${TO_BUILD_TAG}
