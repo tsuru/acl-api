@@ -2,7 +2,7 @@
 API that stores rules of network to be consumed by acl-operator
 
 
-# Archtecture 
+# Architecture 
 
 ```mermaid
 graph TD;
@@ -21,8 +21,16 @@ graph TD;
     aclapi --> mongodb;
     acl-operator1 -- Pull Rules ----> aclapi
     acl-operator2 -- Pull Rules ----> aclapi
+    
+    click tsuru "https://www.github.com/tsuru/tsuru" "Access github project"
+    click aclapi "https://www.github.com/tsuru/acl-api" "Access github project"
 
-        
+    click acl-operator1 "https://www.github.com/tsuru/acl-operator" "Access github project"
+    click acl-operator2 "https://www.github.com/tsuru/acl-operator" "Access github project"
+    
+    click network-policies1 "https://kubernetes.io/docs/concepts/services-networking/network-policies/" "Read more about kubernetes network policies"
+    click network-policies2 "https://kubernetes.io/docs/concepts/services-networking/network-policies/" "Read more about kubernetes network policies"
+
     subgraph cluster-one
       acl-operator1 -- Manage --> network-policies1
     end
