@@ -30,7 +30,14 @@ func init() {
 
 	createConn := func() (stor *mongoStorage, err error) {
 		once.Do(func() {
-			addr := viper.GetString("storage")
+			var addr string
+
+			// compability with https://github.com/globocom/database-as-a-service
+			addr = viper.GetString("dbaas_mongodb_endpoint")
+
+			if addr == "" {
+				addr = viper.GetString("storage")
+			}
 
 			var cs connstring.ConnString
 			cs, err = connstring.ParseAndValidate(addr)
