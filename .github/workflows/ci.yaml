@@ -44,7 +44,7 @@ jobs:
           KO_DEFAULTBASEIMAGE: alpine:3.17.1
           TO_BUILD_TAG: ${{ steps.smarttag.outputs.tag }}
         run: |
-          export TAGS=$(echo -n ':edge,:sha-34489bd7' | sed 's/://g')
+          export TAGS=$(echo -n "${TO_BUILD_TAG}" | sed 's/://g')
           echo "Lets build tags: ${TAGS}"
           echo "${DOCKERHUB_PASSWORD}" | ko login docker.io --username ${DOCKERHUB_USERNAME} --password-stdin
           ko build -B --platform linux/arm64,linux/amd64 -t ${TAGS}
