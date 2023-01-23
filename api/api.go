@@ -64,45 +64,9 @@ type PluginManifestMetadata struct {
 	Version string
 }
 
-func handlePluginManifest(c echo.Context) error {
-	scheme := c.Scheme()
-	if strings.ToLower(c.Request().Header.Get("x-forwarded-proto")) == "https" {
-		scheme = "https"
-	}
-	host := c.Request().Host
-	basePath := strings.TrimSuffix(c.Request().RequestURI, "/manifest.json")
-	baseURI := fmt.Sprintf("%s://%s%s/", scheme, host, basePath)
-
-	manifest := PluginManifest{
-		SchemaVersion: "1.0",
-		Metadata: PluginManifestMetadata{
-			Name:    "acl",
-			Version: version.Version,
-		},
-		URLPerPlatform: map[string]string{
-			"darwin/amd64":  baseURI + "darwin/acl",
-			"darwin/arm64":  baseURI + "darwin/arm64/acl",
-			"linux/386":     baseURI + "linux/386/acl",
-			"linux/amd64":   baseURI + "linux/acl",
-			"linux/arm64":   baseURI + "linux/arm64/acl",
-			"windows/386":   baseURI + "windows/386/acl.exe",
-			"windows/amd64": baseURI + "windows/acl.exe",
-		},
-	}
-
-	return c.JSON(http.StatusOK, manifest)
-}
-
 func setupEcho() *echo.Echo {
 	e := echo.New()
 	e.Use(middleware.Logger())
-	pluginGroup := e.Group("/plugin")
-	pluginGroup.Use(middleware.StaticWithConfig(middleware.StaticConfig{
-		Root:   "build",
-		Browse: true,
-	}))
-	pluginGroup.Use(middleware.Gzip())
-	pluginGroup.GET("/manifest.json", handlePluginManifest)
 
 	e.Use(middleware.BasicAuthWithConfig(middleware.BasicAuthConfig{
 		Skipper: func(c echo.Context) bool {
