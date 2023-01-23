@@ -202,3 +202,54 @@ func TestACLOperatorEngine_SyncStaleUpdate(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEqual(t, lastUpdated, app.Annotations["acl-api.tsuru.io/last-updated"])
 }
+
+func TestACLOperatorEngine_SyncRecentCreated(t *testing.T) {
+	ctx := context.TODO()
+	tsuruCli, undo := mockTsuruClient()
+	defer undo()
+
+	lastUpdated := time.Now().UTC().Add(time.Second * -30).Format(time.RFC3339)
+
+	tsuruCli.TsuruV1().Apps("default").Create(ctx, &v1.App{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "app1",
+			Annotations: map[string]string{
+				"acl-api.tsuru.io/last-updated": lastUpdated,
+			},
+		},
+		Spec: v1.AppSpec{
+			NamespaceName: "default",
+		},
+	}, metav1.CreateOptions{})
+
+	srv := mockTsuruAPI()
+	defer srv.Close()
+
+	viper.Set("tsuru.host", srv.URL)
+	viper.Set("kubernetes.namespace", "default")
+
+	e := &ACLOperatorEngine{
+		logicCache: rule.NewLogicCache(),
+	}
+	result, err := e.Sync(types.Rule{
+		RuleID: "1",
+		Source: types.RuleType{
+			TsuruApp: &types.TsuruAppRule{
+				AppName: "app1",
+			},
+		},
+		Destination: types.RuleType{
+			TsuruApp: &types.TsuruAppRule{
+				AppName: "app2",
+			},
+		},
+		Created: time.Now().UTC(),
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "triggered acl-operator", result)
+
+	app, err := tsuruCli.TsuruV1().Apps("default").Get(ctx, "app1", metav1.GetOptions{})
+	require.NoError(t, err)
+	assert.NotEqual(t, lastUpdated, app.Annotations["acl-api.tsuru.io/last-updated"])
+}

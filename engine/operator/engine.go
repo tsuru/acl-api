@@ -110,6 +110,10 @@ func (e *ACLOperatorEngine) Sync(r types.Rule) (interface{}, error) {
 			return "", err
 		}
 
+		if r.Created.UTC().Add(time.Minute).After(lastUpdated) {
+			needsUpdate = true
+		}
+
 		if time.Now().UTC().After(lastUpdated.Add(time.Minute)) {
 			needsUpdate = true
 		}
