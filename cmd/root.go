@@ -129,4 +129,5 @@ func initLogging() {
 		}
 	}
 	logrus.SetLevel(level)
+	logrus.SetFormatter(&logrus.JSONFormatter{})
 }
