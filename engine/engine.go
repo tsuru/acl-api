@@ -178,6 +178,10 @@ func ShutdownPeriodicSync(ctx context.Context) error {
 
 func RunPeriodicSync() {
 	logrus.Info("Starting sync loop")
+	if viper.GetBool("sync.disabled") {
+		return
+	}
+
 	for {
 		syncInterval := viper.GetDuration("sync.interval")
 		err := syncAllRules()
