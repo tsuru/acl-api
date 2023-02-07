@@ -5,6 +5,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tsuru/acl-api/api"
 	"github.com/tsuru/acl-api/api/version"
+	"github.com/tsuru/acl-api/rule"
 )
 
 var (
@@ -46,8 +48,34 @@ func makeCmds() *cobra.Command {
 		},
 	}
 
+	var checkRules = &cobra.Command{
+		Use:   "check-rules",
+		Short: "check weather rules are valid",
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			svc := rule.GetService()
+			rules, err := svc.FindAll()
+
+			if err != nil {
+				return err
+			}
+
+			for _, rule := range rules {
+				if rule.Removed {
+					continue
+				}
+				err = rule.Destination.Validate()
+				if err != nil {
+					fmt.Println(rule.RuleID, err.Error())
+				}
+			}
+			return nil
+		},
+	}
+
 	rootCmd.AddCommand(apiCmd)
 	rootCmd.AddCommand(workerCmd)
+	rootCmd.AddCommand(checkRules)
 
 	return rootCmd
 }
