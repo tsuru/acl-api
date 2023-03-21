@@ -19,5 +19,6 @@ type ServiceInstance struct {
 	Creator      string
 	EventID      string
 	BindApps     []string
+	BindJobs     []string
 	BaseRules    []ServiceRule
 }

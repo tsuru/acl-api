@@ -57,6 +57,7 @@ type RuleSyncData struct {
 
 type RuleType struct {
 	TsuruApp          *TsuruAppRule          `json:"TsuruApp,omitempty"`
+	TsuruJob          *TsuruJobRule          `json:"TsuruJob,omitempty"`
 	KubernetesService *KubernetesServiceRule `json:"KubernetesService,omitempty"`
 	ExternalDNS       *ExternalDNSRule       `json:"ExternalDNS,omitempty"`
 	ExternalIP        *ExternalIPRule        `json:"ExternalIP,omitempty"`
@@ -71,6 +72,13 @@ func (r *RuleType) Validate() error {
 		}
 		if r.TsuruApp.AppName != "" && r.TsuruApp.PoolName != "" {
 			return errors.New("cannot set both app name and pool name")
+		}
+		countSet++
+	}
+
+	if r.TsuruJob != nil {
+		if r.TsuruJob.JobName == "" {
+			return errors.New("cannot have empty tsuru job name")
 		}
 		countSet++
 	}
@@ -233,6 +241,10 @@ func (p ProtoPort) String() string {
 type TsuruAppRule struct {
 	AppName  string
 	PoolName string
+}
+
+type TsuruJobRule struct {
+	JobName string
 }
 
 type KubernetesServiceRule struct {

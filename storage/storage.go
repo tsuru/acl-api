@@ -32,6 +32,8 @@ type ServiceStorage interface {
 	RemoveRule(instanceName string, ruleID string) error
 	AddApp(instanceName string, appName string) error
 	RemoveApp(instanceName string, appName string) error
+	AddJob(instanceName string, jobName string) error
+	RemoveJob(instanceName string, jobName string) error
 }
 
 type DeleteOpts struct {

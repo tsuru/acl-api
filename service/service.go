@@ -28,6 +28,8 @@ type Service interface {
 	RemoveRule(instanceName string, ruleID string) error
 	AddApp(instanceName string, appName string) ([]types.Rule, error)
 	RemoveApp(instanceName string, appName string) error
+	AddJob(instanceName string, appName string) ([]types.Rule, error)
+	RemoveJob(instanceName string, appName string) error
 }
 
 type serviceImpl struct{}
@@ -104,13 +106,23 @@ func (s *serviceImpl) AddRule(instanceName string, r *types.ServiceRule) ([]type
 	return syncRules(instanceName)
 }
 
-func ruleMetadata(baseID, instanceName, appName string) map[string]string {
+func ruleMetadata(baseID, instanceName string) map[string]string {
 	return map[string]string{
 		"owner":         OwnerAclFromHell,
 		"base-ruleid":   baseID,
 		"instance-name": instanceName,
-		"app-name":      appName,
 	}
+}
+func ruleAppMetadata(baseID, instanceName, appName string) map[string]string {
+	r := ruleMetadata(baseID, instanceName)
+	r["app-name"] = appName
+	return r
+}
+
+func ruleJobMetadata(baseID, instanceName, jobName string) map[string]string {
+	r := ruleMetadata(baseID, instanceName)
+	r["job-name"] = jobName
+	return r
 }
 
 func (s *serviceImpl) RemoveRule(instanceName string, ruleID string) error {
@@ -142,6 +154,18 @@ func (s *serviceImpl) AddApp(instanceName string, appName string) ([]types.Rule,
 	return syncRules(instanceName)
 }
 
+func (s *serviceImpl) AddJob(instanceName string, jobName string) ([]types.Rule, error) {
+	stor, err := storage.GetServiceStorage()
+	if err != nil {
+		return nil, err
+	}
+	err = stor.AddJob(instanceName, jobName)
+	if err != nil {
+		return nil, err
+	}
+	return syncRules(instanceName)
+}
+
 func (s *serviceImpl) RemoveApp(instanceName string, appName string) error {
 	stor, err := storage.GetServiceStorage()
 	if err != nil {
@@ -157,6 +181,23 @@ func (s *serviceImpl) RemoveApp(instanceName string, appName string) error {
 		return err
 	}
 	return stor.RemoveApp(instanceName, appName)
+}
+
+func (s *serviceImpl) RemoveJob(instanceName string, jobName string) error {
+	stor, err := storage.GetServiceStorage()
+	if err != nil {
+		return err
+	}
+	ruleSvc := rule.GetService()
+	err = ruleSvc.DeleteMetadata(map[string]string{
+		"owner":         OwnerAclFromHell,
+		"instance-name": instanceName,
+		"job-name":      jobName,
+	})
+	if err != nil && err != storage.ErrRuleNotFound {
+		return err
+	}
+	return stor.RemoveJob(instanceName, jobName)
 }
 
 var GetService = func() Service {
@@ -183,7 +224,20 @@ func expandRules(instanceName string) ([]*types.Rule, error) {
 				},
 			}
 			appRule.RuleID = fmt.Sprintf("%s-%s", baseID, appName)
-			appRule.Metadata = ruleMetadata(baseID, instanceName, appName)
+			appRule.Metadata = ruleAppMetadata(baseID, instanceName, appName)
+			appRule.Creator = r.Creator
+			allRules = append(allRules, &appRule.Rule)
+		}
+
+		for _, jobName := range instance.BindJobs {
+			appRule := r
+			appRule.Source = types.RuleType{
+				TsuruJob: &types.TsuruJobRule{
+					JobName: jobName,
+				},
+			}
+			appRule.RuleID = fmt.Sprintf("job-%s-%s", baseID, jobName)
+			appRule.Metadata = ruleJobMetadata(baseID, instanceName, jobName)
 			appRule.Creator = r.Creator
 			allRules = append(allRules, &appRule.Rule)
 		}
