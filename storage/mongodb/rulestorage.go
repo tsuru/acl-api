@@ -56,6 +56,13 @@ func (s *ruleStorage) getRulesColl() *mongo.Collection {
 			},
 			Options: options.Index(),
 		})
+
+		coll.Indexes().CreateOne(context.TODO(), mongo.IndexModel{
+			Keys: bson.D{
+				{Key: "source.tsurujob.jobname", Value: 1},
+			},
+			Options: options.Index(),
+		})
 	})
 
 	return coll
@@ -134,6 +141,10 @@ func (s *ruleStorage) FindAll(opts storage.FindOpts) ([]types.Rule, error) {
 
 	if opts.SourceTsuruApp != "" {
 		query["source.tsuruapp.appname"] = opts.SourceTsuruApp
+	}
+
+	if opts.SourceTsuruJob != "" {
+		query["source.tsurujob.jobname"] = opts.SourceTsuruJob
 	}
 
 	cur, err := coll.Find(context.TODO(), query, options.Find().SetSort(bson.M{"_id": 1}))

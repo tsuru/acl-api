@@ -46,6 +46,7 @@ type FindOpts struct {
 	Creator  string
 
 	SourceTsuruApp string
+	SourceTsuruJob string
 }
 
 type SyncFindOpts struct {

@@ -217,4 +217,6 @@ func configHandlers(e *echo.Echo) {
 
 	e.GET("/apps/:app/rules", appRules)
 	e.POST("/apps/:app/sync", appForceSyncRule)
+
+	e.GET("/jobs/:app/rules", jobRules)
 }

@@ -58,7 +58,7 @@ func (s *serviceMock) RemoveRule(instanceName string, ruleID string) error {
 	return nil
 }
 func (s *serviceMock) AddApp(instanceName string, appName string) ([]types.Rule, error) {
-	s.bindAppCall = append(s.removeAppCall, map[string]string{
+	s.bindAppCall = append(s.bindAppCall, map[string]string{
 		"instanceName": instanceName,
 		"appName":      appName,
 	})

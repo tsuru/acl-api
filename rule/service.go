@@ -21,6 +21,7 @@ type RuleService interface {
 	FindByRule(rule types.Rule) ([]types.Rule, error)
 	FindByID(id string) (types.Rule, error)
 	FindBySourceTsuruApp(appName string) ([]types.Rule, error)
+	FindBySourceTsuruJob(jobName string) ([]types.Rule, error)
 	Delete(id string) error
 	DeleteMetadata(metadata map[string]string) error
 	FindSyncs(ruleIDFilter []string) ([]types.RuleSyncInfo, error)
@@ -73,6 +74,16 @@ func (s *ruleServiceImpl) FindBySourceTsuruApp(appName string) ([]types.Rule, er
 	}
 	return stor.FindAll(storage.FindOpts{
 		SourceTsuruApp: appName,
+	})
+}
+
+func (s *ruleServiceImpl) FindBySourceTsuruJob(jobName string) ([]types.Rule, error) {
+	stor, err := storage.GetRuleStorage()
+	if err != nil {
+		return nil, err
+	}
+	return stor.FindAll(storage.FindOpts{
+		SourceTsuruJob: jobName,
 	})
 }
 
