@@ -145,6 +145,53 @@ func (s *RuleStorageSuite) TestFindSourceTsuruApp() {
 
 }
 
+func (s *RuleStorageSuite) TestFindSourceTsuruJob() {
+	r1 := types.Rule{
+		RuleID: "1",
+		Source: types.RuleType{
+			TsuruJob: &types.TsuruJobRule{
+				JobName: "job1",
+			},
+		},
+		Destination: types.RuleType{
+			ExternalDNS: &types.ExternalDNSRule{
+				Name: "x.com",
+			},
+		},
+	}
+	r2 := types.Rule{
+		RuleID: "2",
+		Source: types.RuleType{
+			TsuruJob: &types.TsuruJobRule{
+				JobName: "job2",
+			},
+		},
+		Destination: types.RuleType{
+			ExternalDNS: &types.ExternalDNSRule{
+				Name: "x.com",
+			},
+		},
+	}
+	err := s.Stor.Save([]*types.Rule{&r1, &r2}, false)
+	require.Nil(s.T(), err)
+	rule, err := s.Stor.FindAll(storage.FindOpts{
+		SourceTsuruJob: "job1",
+	})
+
+	s.Require().NoError(err)
+	s.Len(rule, 1)
+	s.Equal("1", rule[0].RuleID)
+
+	rule, err = s.Stor.FindAll(storage.FindOpts{
+		SourceTsuruJob: "job2",
+	})
+
+	s.Require().NoError(err)
+	s.Len(rule, 1)
+	s.Equal("2", rule[0].RuleID)
+
+}
+
 func (s *RuleStorageSuite) TestDelete() {
 	r := types.Rule{
 		RuleID: "1",

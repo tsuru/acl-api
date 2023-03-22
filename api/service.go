@@ -70,7 +70,7 @@ func serviceInfo(c echo.Context) error {
 	return c.JSON(http.StatusOK, []infoItem{item})
 }
 
-func serviceBind(c echo.Context) error {
+func serviceBindApp(c echo.Context) error {
 	instanceName := c.Param("instance")
 	appName := c.FormValue("app-name")
 	if appName == "" {
@@ -85,7 +85,7 @@ func serviceBind(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{})
 }
 
-func serviceUnbind(c echo.Context) error {
+func serviceUnbindApp(c echo.Context) error {
 	req := c.Request()
 	data, err := ioutil.ReadAll(req.Body)
 	if err != nil {
@@ -102,6 +102,44 @@ func serviceUnbind(c echo.Context) error {
 	}
 	svc := service.GetService()
 	err = svc.RemoveApp(instanceName, appName)
+	if err != nil {
+		return err
+	}
+	return c.String(http.StatusOK, "")
+}
+
+func serviceBindJob(c echo.Context) error {
+	instanceName := c.Param("instance")
+	jobName := c.FormValue("job-name")
+	if jobName == "" {
+		c.String(http.StatusBadRequest, "job-name is required")
+	}
+	svc := service.GetService()
+	rules, err := svc.AddJob(instanceName, jobName)
+	if err != nil {
+		return err
+	}
+	go engine.SyncRules(rules, false)
+	return c.JSON(http.StatusOK, map[string]string{})
+}
+
+func serviceUnbindJob(c echo.Context) error {
+	req := c.Request()
+	data, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		return err
+	}
+	query, err := url.ParseQuery(string(data))
+	if err != nil {
+		return err
+	}
+	instanceName := c.Param("instance")
+	jobName := query.Get("job-name")
+	if jobName == "" {
+		c.String(http.StatusBadRequest, "job-name is required")
+	}
+	svc := service.GetService()
+	err = svc.RemoveJob(instanceName, jobName)
 	if err != nil {
 		return err
 	}

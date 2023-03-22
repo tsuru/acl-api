@@ -100,6 +100,17 @@ func (s *serviceStorage) AddApp(instanceName string, appName string) error {
 	return err
 }
 
+func (s *serviceStorage) AddJob(instanceName string, jobName string) error {
+	coll := s.getServiceColl()
+	_, err := coll.UpdateOne(context.TODO(), bson.M{"instancename": instanceName}, bson.M{
+		"$addToSet": bson.M{"bindjobs": jobName},
+	})
+	if err != nil && err == mongo.ErrNoDocuments {
+		err = storage.ErrInstanceNotFound
+	}
+	return err
+}
+
 func (s *serviceStorage) RemoveRule(instanceName string, ruleID string) error {
 	coll := s.getServiceColl()
 	_, err := coll.UpdateOne(context.TODO(), bson.M{"instancename": instanceName}, bson.M{
@@ -115,6 +126,17 @@ func (s *serviceStorage) RemoveApp(instanceName string, appName string) error {
 	coll := s.getServiceColl()
 	_, err := coll.UpdateOne(context.TODO(), bson.M{"instancename": instanceName}, bson.M{
 		"$pull": bson.M{"bindapps": appName},
+	})
+	if err != nil && err == mongo.ErrNoDocuments {
+		err = storage.ErrInstanceNotFound
+	}
+	return err
+}
+
+func (s *serviceStorage) RemoveJob(instanceName string, jobName string) error {
+	coll := s.getServiceColl()
+	_, err := coll.UpdateOne(context.TODO(), bson.M{"instancename": instanceName}, bson.M{
+		"$pull": bson.M{"bindjobs": jobName},
 	})
 	if err != nil && err == mongo.ErrNoDocuments {
 		err = storage.ErrInstanceNotFound

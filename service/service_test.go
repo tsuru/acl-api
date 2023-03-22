@@ -73,6 +73,7 @@ func Test_Service_Find(t *testing.T) {
 		assert.Equal(t, types.ServiceInstance{
 			InstanceName: "x",
 			BindApps:     []string{},
+			BindJobs:     []string{},
 			BaseRules:    []types.ServiceRule{},
 		}, dbSi)
 	})
@@ -188,6 +189,7 @@ func Test_Service_AddRule(t *testing.T) {
 				},
 			},
 			BindApps: []string{},
+			BindJobs: []string{},
 		}, dbSi)
 		syncedRules, err = svc.AddApp("x", "app1")
 		require.Nil(t, err)
@@ -335,6 +337,7 @@ func Test_Service_AddApp(t *testing.T) {
 		assert.Equal(t, types.ServiceInstance{
 			InstanceName: "x",
 			BaseRules:    []types.ServiceRule{},
+			BindJobs:     []string{},
 			BindApps:     []string{"app1"},
 		}, dbSi)
 		syncedRules, err = svc.AddRule("x", &types.ServiceRule{
@@ -382,6 +385,76 @@ func Test_Service_AddApp(t *testing.T) {
 	})
 }
 
+func Test_Service_AddJob(t *testing.T) {
+	stor, err := storage.GetServiceStorage()
+	require.Nil(t, err)
+	clearer := stor.(interface {
+		ClearAll()
+	})
+	t.Run("ok", func(t *testing.T) {
+		clearer.ClearAll()
+		si := types.ServiceInstance{
+			InstanceName: "x",
+		}
+		svc := GetService()
+		err := svc.Create(si)
+		require.Nil(t, err)
+		syncedRules, err := svc.AddJob("x", "job1")
+		require.Nil(t, err)
+		assert.Nil(t, syncedRules)
+		dbSi, err := svc.Find("x")
+		require.Nil(t, err)
+		assert.Equal(t, types.ServiceInstance{
+			InstanceName: "x",
+			BaseRules:    []types.ServiceRule{},
+			BindApps:     []string{},
+			BindJobs:     []string{"job1"},
+		}, dbSi)
+		syncedRules, err = svc.AddRule("x", &types.ServiceRule{
+			Rule: types.Rule{
+				Destination: types.RuleType{
+					TsuruApp: &types.TsuruAppRule{
+						AppName: "app2",
+					},
+				},
+			},
+		})
+		require.Nil(t, err)
+		dbSi, err = svc.Find("x")
+		require.Nil(t, err)
+		baseRuleID := dbSi.BaseRules[0].RuleID
+		assert.NotEmpty(t, baseRuleID)
+
+		expectedRules := []types.Rule{
+			{
+				RuleID: "job-" + baseRuleID + "-job1",
+				Source: types.RuleType{
+					TsuruJob: &types.TsuruJobRule{
+						JobName: "job1",
+					},
+				},
+				Destination: types.RuleType{
+					TsuruApp: &types.TsuruAppRule{
+						AppName: "app2",
+					},
+				},
+				Metadata: map[string]string{
+					"owner":         "aclfromhell",
+					"instance-name": "x",
+					"job-name":      "job1",
+					"base-ruleid":   baseRuleID,
+				},
+			},
+		}
+		compareRules(t, expectedRules, syncedRules)
+
+		ruleSvc := rule.GetService()
+		rules, err := ruleSvc.FindAll()
+		require.Nil(t, err)
+		compareRules(t, expectedRules, rules)
+	})
+}
+
 func Test_Service_RemoveApp(t *testing.T) {
 	stor, err := storage.GetServiceStorage()
 	require.Nil(t, err)
@@ -410,6 +483,44 @@ func Test_Service_RemoveApp(t *testing.T) {
 		require.Nil(t, err)
 
 		err = svc.RemoveApp("x", "app1")
+		require.Nil(t, err)
+
+		ruleSvc := rule.GetService()
+		rules, err := ruleSvc.FindAll()
+		require.Nil(t, err)
+		assert.Len(t, rules, 1)
+		assert.True(t, rules[0].Removed)
+	})
+}
+
+func Test_Service_RemoveJob(t *testing.T) {
+	stor, err := storage.GetServiceStorage()
+	require.Nil(t, err)
+	clearer := stor.(interface {
+		ClearAll()
+	})
+	t.Run("ok", func(t *testing.T) {
+		clearer.ClearAll()
+		si := types.ServiceInstance{
+			InstanceName: "x",
+		}
+		svc := GetService()
+		err := svc.Create(si)
+		require.Nil(t, err)
+		_, err = svc.AddJob("x", "job1")
+		require.Nil(t, err)
+		_, err = svc.AddRule("x", &types.ServiceRule{
+			Rule: types.Rule{
+				Destination: types.RuleType{
+					TsuruApp: &types.TsuruAppRule{
+						AppName: "app2",
+					},
+				},
+			},
+		})
+		require.Nil(t, err)
+
+		err = svc.RemoveJob("x", "job1")
 		require.Nil(t, err)
 
 		ruleSvc := rule.GetService()

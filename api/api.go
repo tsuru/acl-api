@@ -204,8 +204,10 @@ func configHandlers(e *echo.Echo) {
 	e.GET("/resources/:instance", serviceInfo)
 	e.DELETE("/resources/:instance", serviceDelete)
 	e.GET("/resources/:instance/status", serviceStatus)
-	e.POST("/resources/:instance/bind-app", serviceBind)
-	e.DELETE("/resources/:instance/bind-app", serviceUnbind)
+	e.POST("/resources/:instance/bind-app", serviceBindApp)
+	e.DELETE("/resources/:instance/bind-app", serviceUnbindApp)
+	e.POST("/resources/:instance/bind-job", serviceBindJob)
+	e.DELETE("/resources/:instance/bind-job", serviceUnbindJob)
 	e.POST("/resources/:instance/bind", serviceBindUnit)
 	e.DELETE("/resources/:instance/bind", serviceUnbindUnit)
 	e.GET("/resources/:instance/rule", serviceListRules)
@@ -215,4 +217,6 @@ func configHandlers(e *echo.Echo) {
 
 	e.GET("/apps/:app/rules", appRules)
 	e.POST("/apps/:app/sync", appForceSyncRule)
+
+	e.GET("/jobs/:job/rules", jobRules)
 }

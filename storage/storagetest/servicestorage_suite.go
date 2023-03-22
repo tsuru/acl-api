@@ -36,6 +36,7 @@ func (s *ServiceStorageSuite) TestSave() {
 	assert.Equal(t, types.ServiceInstance{
 		InstanceName: "inst1",
 		BindApps:     []string{},
+		BindJobs:     []string{},
 		BaseRules:    []types.ServiceRule{},
 	}, dbSi)
 	err = s.Stor.Create(si)
@@ -74,6 +75,7 @@ func (s *ServiceStorageSuite) TestAddRule() {
 	assert.Equal(t, types.ServiceInstance{
 		InstanceName: "inst1",
 		BindApps:     []string{},
+		BindJobs:     []string{},
 		BaseRules: []types.ServiceRule{
 			{Rule: types.Rule{RuleID: dbSi.BaseRules[0].RuleID, Metadata: map[string]string{}, Created: dbSi.BaseRules[0].Created}},
 		},
@@ -98,6 +100,7 @@ func (s *ServiceStorageSuite) TestRemoveRule() {
 	assert.Equal(t, types.ServiceInstance{
 		InstanceName: "inst1",
 		BindApps:     []string{},
+		BindJobs:     []string{},
 		BaseRules: []types.ServiceRule{
 			{Rule: types.Rule{RuleID: "rule2", Metadata: map[string]string{}, Created: dbSi.BaseRules[0].Created}},
 		},
@@ -123,6 +126,31 @@ func (s *ServiceStorageSuite) TestAddApp() {
 	assert.Equal(t, types.ServiceInstance{
 		InstanceName: "inst1",
 		BindApps:     []string{"app1", "app2"},
+		BindJobs:     []string{},
+		BaseRules:    []types.ServiceRule{},
+	}, dbSi)
+}
+
+func (s *ServiceStorageSuite) TestAddJob() {
+	t := s.T()
+	si := types.ServiceInstance{
+		InstanceName: "inst1",
+	}
+	err := s.Stor.Create(si)
+	require.Nil(t, err)
+	err = s.Stor.AddJob("inst1", "job1")
+	require.Nil(t, err)
+	err = s.Stor.AddJob("inst1", "job2")
+	require.Nil(t, err)
+	err = s.Stor.AddJob("inst1", "job1")
+	require.Nil(t, err)
+	dbSi, err := s.Stor.Find("inst1")
+	require.NoError(t, err)
+	sort.Strings(dbSi.BindApps)
+	assert.Equal(t, types.ServiceInstance{
+		InstanceName: "inst1",
+		BindJobs:     []string{"job1", "job2"},
+		BindApps:     []string{},
 		BaseRules:    []types.ServiceRule{},
 	}, dbSi)
 }
@@ -145,6 +173,30 @@ func (s *ServiceStorageSuite) TestRemoveApp() {
 	assert.Equal(t, types.ServiceInstance{
 		InstanceName: "inst1",
 		BindApps:     []string{"app2"},
+		BindJobs:     []string{},
+		BaseRules:    []types.ServiceRule{},
+	}, dbSi)
+}
+
+func (s *ServiceStorageSuite) TestRemoveJob() {
+	t := s.T()
+	si := types.ServiceInstance{
+		InstanceName: "inst1",
+	}
+	err := s.Stor.Create(si)
+	require.Nil(t, err)
+	err = s.Stor.AddJob("inst1", "job1")
+	require.Nil(t, err)
+	err = s.Stor.AddJob("inst1", "job2")
+	require.Nil(t, err)
+	err = s.Stor.RemoveJob("inst1", "job1")
+	require.Nil(t, err)
+	dbSi, err := s.Stor.Find("inst1")
+	require.NoError(t, err)
+	assert.Equal(t, types.ServiceInstance{
+		InstanceName: "inst1",
+		BindJobs:     []string{"job2"},
+		BindApps:     []string{},
 		BaseRules:    []types.ServiceRule{},
 	}, dbSi)
 }
@@ -162,6 +214,7 @@ func (s *ServiceStorageSuite) TestList() {
 		{
 			InstanceName: "inst1",
 			BindApps:     []string{},
+			BindJobs:     []string{},
 			BaseRules:    []types.ServiceRule{},
 		},
 	}, dbSi)

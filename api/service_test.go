@@ -20,7 +20,10 @@ import (
 )
 
 type serviceMock struct {
+	bindAppCall   []map[string]string
+	bindJobCall   []map[string]string
 	removeAppCall []map[string]string
+	removeJobCall []map[string]string
 	addRuleCall   []*types.ServiceRule
 }
 
@@ -55,7 +58,11 @@ func (s *serviceMock) RemoveRule(instanceName string, ruleID string) error {
 	return nil
 }
 func (s *serviceMock) AddApp(instanceName string, appName string) ([]types.Rule, error) {
-	return nil, nil
+	s.bindAppCall = append(s.bindAppCall, map[string]string{
+		"instanceName": instanceName,
+		"appName":      appName,
+	})
+	return []types.Rule{}, nil
 }
 func (s *serviceMock) RemoveApp(instanceName string, appName string) error {
 	s.removeAppCall = append(s.removeAppCall, map[string]string{
@@ -65,7 +72,47 @@ func (s *serviceMock) RemoveApp(instanceName string, appName string) error {
 	return nil
 }
 
-func Test_serviceUnbind(t *testing.T) {
+func (s *serviceMock) AddJob(instanceName string, jobName string) ([]types.Rule, error) {
+	s.bindJobCall = append(s.bindJobCall, map[string]string{
+		"instanceName": instanceName,
+		"jobName":      jobName,
+	})
+	return []types.Rule{}, nil
+}
+func (s *serviceMock) RemoveJob(instanceName string, jobName string) error {
+	s.removeJobCall = append(s.removeJobCall, map[string]string{
+		"instanceName": instanceName,
+		"jobName":      jobName,
+	})
+	return nil
+}
+
+func Test_serviceBindApp(t *testing.T) {
+	mock := &serviceMock{}
+	service.GetService = func() service.Service {
+		return mock
+	}
+	e := echo.New()
+	configHandlers(e)
+	srv := httptest.NewServer(e.Server.Handler)
+	defer srv.Close()
+
+	body := strings.NewReader("app-name=myapp")
+	req, err := http.NewRequest("POST", srv.URL+"/resources/testsvc/bind-app", body)
+	require.Nil(t, err)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	rsp, err := http.DefaultClient.Do(req)
+	require.Nil(t, err)
+	rsp.Body.Close()
+	assert.Equal(t, 200, rsp.StatusCode)
+	assert.Equal(t, []map[string]string{
+		{
+			"instanceName": "testsvc",
+			"appName":      "myapp",
+		},
+	}, mock.bindAppCall)
+}
+func Test_serviceUnbindApp(t *testing.T) {
 	mock := &serviceMock{}
 	service.GetService = func() service.Service {
 		return mock
@@ -89,6 +136,57 @@ func Test_serviceUnbind(t *testing.T) {
 			"appName":      "myapp",
 		},
 	}, mock.removeAppCall)
+}
+
+func Test_serviceBindJob(t *testing.T) {
+	mock := &serviceMock{}
+	service.GetService = func() service.Service {
+		return mock
+	}
+	e := echo.New()
+	configHandlers(e)
+	srv := httptest.NewServer(e.Server.Handler)
+	defer srv.Close()
+
+	body := strings.NewReader("job-name=myjob")
+	req, err := http.NewRequest("POST", srv.URL+"/resources/testsvc/bind-job", body)
+	require.Nil(t, err)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	rsp, err := http.DefaultClient.Do(req)
+	require.Nil(t, err)
+	rsp.Body.Close()
+	assert.Equal(t, 200, rsp.StatusCode)
+	assert.Equal(t, []map[string]string{
+		{
+			"instanceName": "testsvc",
+			"jobName":      "myjob",
+		},
+	}, mock.bindJobCall)
+}
+func Test_serviceUnbindJob(t *testing.T) {
+	mock := &serviceMock{}
+	service.GetService = func() service.Service {
+		return mock
+	}
+	e := echo.New()
+	configHandlers(e)
+	srv := httptest.NewServer(e.Server.Handler)
+	defer srv.Close()
+
+	body := strings.NewReader("job-name=myjob")
+	req, err := http.NewRequest("DELETE", srv.URL+"/resources/testsvc/bind-job", body)
+	require.Nil(t, err)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	rsp, err := http.DefaultClient.Do(req)
+	require.Nil(t, err)
+	rsp.Body.Close()
+	assert.Equal(t, 200, rsp.StatusCode)
+	assert.Equal(t, []map[string]string{
+		{
+			"instanceName": "testsvc",
+			"jobName":      "myjob",
+		},
+	}, mock.removeJobCall)
 }
 
 func Test_serviceRuleAdd(t *testing.T) {
