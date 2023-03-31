@@ -149,9 +149,8 @@ func Test_serviceBindJob(t *testing.T) {
 	defer srv.Close()
 
 	body := strings.NewReader("job-name=myjob")
-	req, err := http.NewRequest("POST", srv.URL+"/resources/testsvc/bind-job", body)
+	req, err := http.NewRequest("PUT", srv.URL+"/resources/testsvc/binds/jobs/myjob", body)
 	require.Nil(t, err)
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	rsp, err := http.DefaultClient.Do(req)
 	require.Nil(t, err)
 	rsp.Body.Close()
@@ -173,10 +172,8 @@ func Test_serviceUnbindJob(t *testing.T) {
 	srv := httptest.NewServer(e.Server.Handler)
 	defer srv.Close()
 
-	body := strings.NewReader("job-name=myjob")
-	req, err := http.NewRequest("DELETE", srv.URL+"/resources/testsvc/bind-job", body)
+	req, err := http.NewRequest("DELETE", srv.URL+"/resources/testsvc/binds/jobs/myjob", nil)
 	require.Nil(t, err)
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	rsp, err := http.DefaultClient.Do(req)
 	require.Nil(t, err)
 	rsp.Body.Close()

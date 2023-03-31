@@ -110,9 +110,9 @@ func serviceUnbindApp(c echo.Context) error {
 
 func serviceBindJob(c echo.Context) error {
 	instanceName := c.Param("instance")
-	jobName := c.FormValue("job-name")
+	jobName := c.Param("job")
 	if jobName == "" {
-		c.String(http.StatusBadRequest, "job-name is required")
+		c.String(http.StatusBadRequest, "job is required")
 	}
 	svc := service.GetService()
 	rules, err := svc.AddJob(instanceName, jobName)
@@ -124,22 +124,14 @@ func serviceBindJob(c echo.Context) error {
 }
 
 func serviceUnbindJob(c echo.Context) error {
-	req := c.Request()
-	data, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		return err
-	}
-	query, err := url.ParseQuery(string(data))
-	if err != nil {
-		return err
-	}
+	jobName := c.Param("job")
 	instanceName := c.Param("instance")
-	jobName := query.Get("job-name")
+
 	if jobName == "" {
 		c.String(http.StatusBadRequest, "job-name is required")
 	}
 	svc := service.GetService()
-	err = svc.RemoveJob(instanceName, jobName)
+	err := svc.RemoveJob(instanceName, jobName)
 	if err != nil {
 		return err
 	}
