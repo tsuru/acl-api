@@ -155,14 +155,17 @@ func (s *serviceImpl) AddApp(instanceName string, appName string) ([]types.Rule,
 }
 
 func (s *serviceImpl) AddJob(instanceName string, jobName string) ([]types.Rule, error) {
+	fmt.Printf("DEBUG/AddJob: storage.GetServiceStorage()\n")
 	stor, err := storage.GetServiceStorage()
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("DEBUG/AddJob: stor.AddJob(%s, %s)\n", instanceName, jobName)
 	err = stor.AddJob(instanceName, jobName)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("DEBUG/AddJob: syncRules(%s)\n", instanceName)
 	return syncRules(instanceName)
 }
 
@@ -246,6 +249,7 @@ func expandRules(instanceName string) ([]*types.Rule, error) {
 }
 
 func syncRules(instanceName string) ([]types.Rule, error) {
+	fmt.Printf("DEBUG/syncRules: expandRules()\n")
 	rules, err := expandRules(instanceName)
 	if err != nil {
 		return nil, err
@@ -254,6 +258,7 @@ func syncRules(instanceName string) ([]types.Rule, error) {
 		return nil, nil
 	}
 	ruleSvc := rule.GetService()
+	fmt.Printf("DEBUG/syncRules: ruleSvc.Save()\n")
 	err = ruleSvc.Save(rules, true)
 	if err != nil {
 		return nil, err

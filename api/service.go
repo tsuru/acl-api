@@ -114,7 +114,9 @@ func serviceBindJob(c echo.Context) error {
 	if jobName == "" {
 		c.String(http.StatusBadRequest, "job is required")
 	}
+	fmt.Printf("DEBUG: calling getservice()\n")
 	svc := service.GetService()
+	fmt.Printf("DEBUG: calling AddJob()\n")
 	rules, err := svc.AddJob(instanceName, jobName)
 	if err != nil {
 		return err
