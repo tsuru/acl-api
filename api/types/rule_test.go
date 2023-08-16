@@ -152,11 +152,25 @@ func TestValidateRuleType(t *testing.T) {
 		},
 		{
 			rt: RuleType{
+				TsuruApp: &TsuruAppRule{
+					AppName: "blaah-blah",
+				},
+			},
+		},
+		{
+			rt: RuleType{
 				TsuruJob: &TsuruJobRule{
 					JobName: "blaah-blah.cluster",
 				},
 			},
 			expected: `invalid job name`,
+		},
+		{
+			rt: RuleType{
+				TsuruJob: &TsuruJobRule{
+					JobName: "blaah-blah",
+				},
+			},
 		},
 	}
 
