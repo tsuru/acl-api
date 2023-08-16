@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -16,6 +17,8 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
+
+var tsuruNameRegexp = regexp.MustCompile(`^[a-z][a-z0-9-]{0,39}$`)
 
 type Rule struct {
 	RuleID      string
@@ -73,12 +76,20 @@ func (r *RuleType) Validate() error {
 		if r.TsuruApp.AppName != "" && r.TsuruApp.PoolName != "" {
 			return errors.New("cannot set both app name and pool name")
 		}
+
+		if r.TsuruApp.AppName != "" && !validateTsuruName(r.TsuruApp.AppName) {
+			return errors.New("invalid app name")
+		}
 		countSet++
 	}
 
 	if r.TsuruJob != nil {
 		if r.TsuruJob.JobName == "" {
 			return errors.New("cannot have empty tsuru job name")
+		}
+
+		if !validateTsuruName(r.TsuruJob.JobName) {
+			return errors.New("invalid job name")
 		}
 		countSet++
 	}
@@ -225,6 +236,10 @@ func validatePorts(ports []ProtoPort) error {
 		return errors.Errorf("invalid protocol %q, valid values are: %v", p.Protocol, strings.Join(validProtoStrs, ", "))
 	}
 	return nil
+}
+
+func validateTsuruName(name string) bool {
+	return tsuruNameRegexp.MatchString(name)
 }
 
 type ProtoPorts []ProtoPort

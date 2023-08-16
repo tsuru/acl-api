@@ -133,6 +133,31 @@ func TestValidateRuleType(t *testing.T) {
 			},
 			expected: `Invalid rpaas instance name`,
 		},
+		{
+			rt: RuleType{
+				TsuruApp: &TsuruAppRule{
+					AppName:  "blaah-blah",
+					PoolName: "pool-name",
+				},
+			},
+			expected: `cannot set both app name and pool name`,
+		},
+		{
+			rt: RuleType{
+				TsuruApp: &TsuruAppRule{
+					AppName: "blaah-blah.cluster",
+				},
+			},
+			expected: `invalid app name`,
+		},
+		{
+			rt: RuleType{
+				TsuruJob: &TsuruJobRule{
+					JobName: "blaah-blah.cluster",
+				},
+			},
+			expected: `invalid job name`,
+		},
 	}
 
 	for _, tt := range tests {
