@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tsuru/tsuru/app"
 	"github.com/tsuru/tsuru/provision/pool"
+	jobTypes "github.com/tsuru/tsuru/types/job"
 	provTypes "github.com/tsuru/tsuru/types/provision"
 )
 
@@ -30,6 +31,7 @@ var (
 type TsuruClient interface {
 	PoolCluster(tsuruPool pool.Pool) (*provTypes.Cluster, error)
 	Cluster(clusterName string) (*provTypes.Cluster, error)
+	JobInfo(jobName string) (*jobTypes.Job, error)
 	AppInfo(appName string) (*app.App, error)
 	PoolInfo(poolName string) (*pool.Pool, error)
 	Clusters() ([]provTypes.Cluster, error)
@@ -52,6 +54,7 @@ type tsuruClient struct {
 	*BaseHTTPClient
 	clustersCache []provTypes.Cluster
 	appInfoCache  map[string]*cachedApp
+	jobInfoCache  map[string]*cachedJob
 	poolCache     map[string]*cachedPool
 }
 
@@ -108,6 +111,17 @@ func (t *tsuruClient) AppInfo(appName string) (*app.App, error) {
 	}
 	t.Unlock()
 	return data.appInfo(appName)
+}
+
+func (t *tsuruClient) JobInfo(jobName string) (*jobTypes.Job, error) {
+	t.Lock()
+	data, ok := t.jobInfoCache[jobName]
+	if !ok {
+		data = &cachedJob{cachedBase: cachedBase{cli: t}}
+		t.jobInfoCache[jobName] = data
+	}
+	t.Unlock()
+	return data.jobInfo(jobName)
 }
 
 func (t *tsuruClient) PoolInfo(poolName string) (*pool.Pool, error) {
@@ -182,6 +196,42 @@ func (c *cachedApp) appInfo(appName string) (*app.App, error) {
 		return nil, errors.Errorf("empty data for app %q", appName)
 	}
 	c.result = &appData
+	return c.result, nil
+}
+
+type cachedJob struct {
+	cachedBase
+	result      *jobTypes.Job
+	cachedError error
+}
+
+type jobInfoResult struct {
+	Job *jobTypes.Job `json:"job,omitempty"`
+}
+
+func (c *cachedJob) jobInfo(jobName string) (*jobTypes.Job, error) {
+	c.Lock()
+	defer c.Unlock()
+	if c.result != nil {
+		return c.result, nil
+	}
+	if c.cachedError != nil {
+		return nil, c.cachedError
+	}
+	var jobInfo jobInfoResult
+	err := c.cli.doRequest(http.MethodGet, "/jobs/"+jobName, &jobInfo)
+	if err != nil {
+		if httpErr, ok := errors.Cause(err).(*HTTPError); ok {
+			if httpErr.StatusCode == http.StatusNotFound {
+				c.cachedError = err
+			}
+		}
+		return nil, err
+	}
+	if jobInfo.Job == nil {
+		return nil, errors.Errorf("empty data for job %q", jobName)
+	}
+	c.result = jobInfo.Job
 	return c.result, nil
 }
 
