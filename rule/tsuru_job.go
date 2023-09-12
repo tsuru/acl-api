@@ -5,6 +5,7 @@
 package rule
 
 import (
+	"github.com/pkg/errors"
 	"github.com/tsuru/acl-api/api/types"
 	"github.com/tsuru/acl-api/external"
 	aclKube "github.com/tsuru/acl-api/kubernetes"
@@ -13,7 +14,8 @@ import (
 )
 
 var (
-	_ RuleLogic = &tsuruJobRuleLogic{}
+	_              RuleLogic = &tsuruJobRuleLogic{}
+	emptyPoolError           = errors.New("the job must have an pool name")
 )
 
 type tsuruJobRuleLogic struct {
@@ -42,6 +44,9 @@ func (s *tsuruJobRuleLogic) getPool() (*pool.Pool, error) {
 	if err != nil {
 		return nil, err
 	}
+	if poolName == "" {
+		return nil, emptyPoolError
+	}
 	return s.tsuruClient.PoolInfo(poolName)
 }
 
@@ -57,9 +62,11 @@ func (s *tsuruJobRuleLogic) KubernetesRestConfig() (*rest.Config, string, error)
 	if err != nil {
 		return nil, "", err
 	}
+
 	restConfig, err := aclKube.RestConfig(*cluster)
 	if err != nil {
 		return nil, "", err
 	}
+
 	return restConfig, pool.Name, nil
 }

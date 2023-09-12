@@ -39,6 +39,10 @@ var GetClient = func(cluster provTypes.Cluster) (kubernetes.Interface, error) {
 	return kubernetes.NewForConfig(config)
 }
 
+var GetClientWithRestConfig = func(config *rest.Config) (kubernetes.Interface, error) {
+	return kubernetes.NewForConfig(config)
+}
+
 // GetClientset func may be overridden in tests
 var GetClientset = func(cluster provTypes.Cluster) (apiextensionsclientset.Interface, error) {
 	config, err := RestConfig(cluster)

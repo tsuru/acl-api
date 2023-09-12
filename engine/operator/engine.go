@@ -18,7 +18,6 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sTypes "k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes"
 )
 
 var (
@@ -162,6 +161,7 @@ func (e *ACLOperatorEngine) SyncJob(r types.Rule) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	if source == nil {
 		return nil, nil
 	}
@@ -176,7 +176,7 @@ func (e *ACLOperatorEngine) SyncJob(r types.Rule) (interface{}, error) {
 		return nil, nil
 	}
 
-	k8sClient, err := kubernetes.NewForConfig(restConfig)
+	k8sClient, err := aclKube.GetClientWithRestConfig(restConfig)
 	if err != nil {
 		return "", err
 	}

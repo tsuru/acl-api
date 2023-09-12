@@ -45,6 +45,7 @@ func NewTsuruClient() TsuruClient {
 			Logger: logrus.WithField("http-client", "tsuru"),
 		},
 		appInfoCache: map[string]*cachedApp{},
+		jobInfoCache: map[string]*cachedJob{},
 		poolCache:    map[string]*cachedPool{},
 	}
 }
