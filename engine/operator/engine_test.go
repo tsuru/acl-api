@@ -131,7 +131,7 @@ func TestACLOperatorEngine_SyncApp(t *testing.T) {
 	assert.NotEqual(t, "", app.Annotations["acl-api.tsuru.io/last-updated"])
 }
 
-func TestACLOperatorEngine_SyncAvoidFrequentUpdates(t *testing.T) {
+func TestACLOperatorEngine_SyncAppAvoidFrequentUpdates(t *testing.T) {
 	ctx := context.TODO()
 	tsuruCli, undo := mockTsuruClient()
 	defer undo()
@@ -181,7 +181,7 @@ func TestACLOperatorEngine_SyncAvoidFrequentUpdates(t *testing.T) {
 	assert.Equal(t, lastUpdated, app.Annotations["acl-api.tsuru.io/last-updated"])
 }
 
-func TestACLOperatorEngine_SyncStaleUpdate(t *testing.T) {
+func TestACLOperatorEngine_SyncAppStaleUpdate(t *testing.T) {
 	ctx := context.TODO()
 	tsuruCli, undo := mockTsuruClient()
 	defer undo()
@@ -231,7 +231,7 @@ func TestACLOperatorEngine_SyncStaleUpdate(t *testing.T) {
 	assert.NotEqual(t, lastUpdated, app.Annotations["acl-api.tsuru.io/last-updated"])
 }
 
-func TestACLOperatorEngine_SyncRecentCreated(t *testing.T) {
+func TestACLOperatorEngine_SyncAppRecentCreated(t *testing.T) {
 	ctx := context.TODO()
 	tsuruCli, undo := mockTsuruClient()
 	defer undo()
@@ -322,8 +322,155 @@ func TestACLOperatorEngine_SyncJob(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "triggered acl-operator", result)
 
-	app, err := cronJobNamespace.Get(ctx, "job1", metav1.GetOptions{})
+	job, err := cronJobNamespace.Get(ctx, "job1", metav1.GetOptions{})
 	require.NoError(t, err)
 
-	assert.NotEqual(t, "", app.Annotations["acl-api.tsuru.io/last-updated"])
+	assert.NotEqual(t, "", job.Annotations["acl-api.tsuru.io/last-updated"])
+}
+
+func TestACLOperatorEngine_SyncJobAvoidFrequentUpdates(t *testing.T) {
+	ctx := context.TODO()
+	k8sCli, undo := mockK8sClient()
+	defer undo()
+
+	lastUpdated := time.Now().UTC().Add(time.Second * -30).Format(time.RFC3339)
+
+	cronJobNamespace := k8sCli.BatchV1().CronJobs("tsuru-p1")
+	cronJobNamespace.Create(ctx, &batchv1.CronJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "job1",
+			Annotations: map[string]string{
+				"acl-api.tsuru.io/last-updated": lastUpdated,
+			},
+		},
+		Spec: batchv1.CronJobSpec{},
+	}, metav1.CreateOptions{})
+
+	srv := mockTsuruAPI()
+	defer srv.Close()
+
+	viper.Set("tsuru.host", srv.URL)
+
+	e := &ACLOperatorEngine{
+		logicCache: rule.NewLogicCache(),
+	}
+	result, err := e.Sync(types.Rule{
+		RuleID: "1",
+		Source: types.RuleType{
+			TsuruJob: &types.TsuruJobRule{
+				JobName: "job1",
+			},
+		},
+		Destination: types.RuleType{
+			TsuruApp: &types.TsuruAppRule{
+				AppName: "app2",
+			},
+		},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "triggered acl-operator in the last minute", result)
+
+	job, err := cronJobNamespace.Get(ctx, "job1", metav1.GetOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, lastUpdated, job.Annotations["acl-api.tsuru.io/last-updated"])
+}
+
+func TestACLOperatorEngine_SyncJobStaleUpdate(t *testing.T) {
+	ctx := context.TODO()
+	k8sCli, undo := mockK8sClient()
+	defer undo()
+
+	lastUpdated := time.Now().UTC().Add(time.Minute * -30).Format(time.RFC3339)
+
+	cronJobNamespace := k8sCli.BatchV1().CronJobs("tsuru-p1")
+	cronJobNamespace.Create(ctx, &batchv1.CronJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "job1",
+			Annotations: map[string]string{
+				"acl-api.tsuru.io/last-updated": lastUpdated,
+			},
+		},
+		Spec: batchv1.CronJobSpec{},
+	}, metav1.CreateOptions{})
+
+	srv := mockTsuruAPI()
+	defer srv.Close()
+
+	viper.Set("tsuru.host", srv.URL)
+	viper.Set("kubernetes.namespace", "default")
+
+	e := &ACLOperatorEngine{
+		logicCache: rule.NewLogicCache(),
+	}
+	result, err := e.Sync(types.Rule{
+		RuleID: "1",
+		Source: types.RuleType{
+			TsuruJob: &types.TsuruJobRule{
+				JobName: "job1",
+			},
+		},
+		Destination: types.RuleType{
+			TsuruApp: &types.TsuruAppRule{
+				AppName: "app2",
+			},
+		},
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "triggered acl-operator", result)
+
+	job, err := cronJobNamespace.Get(ctx, "job1", metav1.GetOptions{})
+	require.NoError(t, err)
+	assert.NotEqual(t, lastUpdated, job.Annotations["acl-api.tsuru.io/last-updated"])
+}
+
+func TestACLOperatorEngine_SyncJobRecentCreated(t *testing.T) {
+	ctx := context.TODO()
+	k8sCli, undo := mockK8sClient()
+	defer undo()
+
+	lastUpdated := time.Now().UTC().Add(time.Second * -30).Format(time.RFC3339)
+
+	cronJobNamespace := k8sCli.BatchV1().CronJobs("tsuru-p1")
+	cronJobNamespace.Create(ctx, &batchv1.CronJob{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "job1",
+			Annotations: map[string]string{
+				"acl-api.tsuru.io/last-updated": lastUpdated,
+			},
+		},
+		Spec: batchv1.CronJobSpec{},
+	}, metav1.CreateOptions{})
+
+	srv := mockTsuruAPI()
+	defer srv.Close()
+
+	viper.Set("tsuru.host", srv.URL)
+	viper.Set("kubernetes.namespace", "default")
+
+	e := &ACLOperatorEngine{
+		logicCache: rule.NewLogicCache(),
+	}
+	result, err := e.Sync(types.Rule{
+		RuleID: "1",
+		Source: types.RuleType{
+			TsuruJob: &types.TsuruJobRule{
+				JobName: "job1",
+			},
+		},
+		Destination: types.RuleType{
+			TsuruApp: &types.TsuruAppRule{
+				AppName: "app2",
+			},
+		},
+		Created: time.Now().UTC(),
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, "triggered acl-operator", result)
+
+	job, err := cronJobNamespace.Get(ctx, "job1", metav1.GetOptions{})
+	require.NoError(t, err)
+	assert.NotEqual(t, lastUpdated, job.Annotations["acl-api.tsuru.io/last-updated"])
 }
