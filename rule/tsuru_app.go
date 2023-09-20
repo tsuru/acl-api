@@ -57,17 +57,21 @@ func (s *tsuruAppRuleLogic) FriendlyName() string {
 	return s.rule.PoolName
 }
 
-func (s *tsuruAppRuleLogic) KubernetesRestConfig() (*rest.Config, error) {
+func (s *tsuruAppRuleLogic) KubernetesRestConfig() (*rest.Config, string, error) {
 	pool, err := s.getPool()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if pool.Provisioner != "kubernetes" {
-		return nil, nil
+		return nil, "", nil
 	}
 	cluster, err := s.tsuruClient.PoolCluster(*pool)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return aclKube.RestConfig(*cluster)
+	restConfig, err := aclKube.RestConfig(*cluster)
+	if err != nil {
+		return nil, "", err
+	}
+	return restConfig, pool.Name, nil
 }

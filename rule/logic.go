@@ -13,7 +13,7 @@ import (
 )
 
 type RuleLogic interface {
-	KubernetesRestConfig() (*rest.Config, error)
+	KubernetesRestConfig() (restConfig *rest.Config, poolName string, err error)
 }
 
 type logicCache struct {
@@ -25,6 +25,10 @@ type logicCache struct {
 func (l *logicCache) logicFromRuleType(r types.RuleType) RuleLogic {
 	if r.TsuruApp != nil {
 		return &tsuruAppRuleLogic{rule: r.TsuruApp, tsuruClient: l.tsuruClient}
+	}
+
+	if r.TsuruJob != nil {
+		return &tsuruJobRuleLogic{rule: r.TsuruJob, tsuruClient: l.tsuruClient}
 	}
 
 	return nil
