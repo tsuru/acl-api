@@ -308,6 +308,9 @@ func (rt *RuleType) String() string {
 		}
 		return fmt.Sprintf("Tsuru APP: %s", rt.TsuruApp.AppName)
 	}
+	if rt.TsuruJob != nil {
+		return fmt.Sprintf("Tsuru Job: %s", rt.TsuruJob.JobName)
+	}
 	if rt.ExternalDNS != nil {
 		wholeNet := ""
 		if rt.ExternalDNS.SyncWholeNetwork {
