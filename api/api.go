@@ -202,6 +202,7 @@ func configHandlers(e *echo.Echo) {
 	e.POST("/resources", serviceCreate)
 	e.GET("/resources/plans", servicePlans)
 	e.GET("/resources/:instance", serviceInfo)
+	e.PUT("/resources/:instance", serviceUpdate)
 	e.DELETE("/resources/:instance", serviceDelete)
 	e.GET("/resources/:instance/status", serviceStatus)
 	e.POST("/resources/:instance/bind-app", serviceBindApp)

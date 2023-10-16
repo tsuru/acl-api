@@ -17,6 +17,7 @@ import (
 	"github.com/tsuru/acl-api/engine"
 	"github.com/tsuru/acl-api/rule"
 	"github.com/tsuru/acl-api/service"
+	"github.com/tsuru/acl-api/storage"
 )
 
 func serviceCreate(c echo.Context) error {
@@ -29,6 +30,25 @@ func serviceCreate(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	return c.String(http.StatusOK, "")
+}
+
+func serviceUpdate(c echo.Context) error {
+	// serviceUpdate is a no-op operation
+	// just check if service exists
+	instanceName := c.Param("instance")
+
+	svc := service.GetService()
+	_, err := svc.Find(instanceName)
+
+	if err == storage.ErrInstanceNotFound {
+		return c.String(http.StatusNotFound, "")
+	}
+
+	if err != nil {
+		return err
+	}
+
 	return c.String(http.StatusOK, "")
 }
 
