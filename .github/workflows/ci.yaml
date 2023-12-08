@@ -14,7 +14,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-go@v2
       with:
-        go-version: 1.19
+        go-version: 1.20
     - run: make test
 
   publish:
@@ -24,27 +24,37 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
       - uses: Surgo/docker-smart-tag-action@v1
         id: smarttag
         with:
-          docker_image: ""
+          docker_image: "tsuru/acl-api"
           default_branch: main
           tag_with_sha: "true"
-      - uses: actions/setup-go@v2
+      - name: Handle smart-tag to proper tag var
+        uses: actions/github-script@v6
+        id: handle_tag
         with:
-          go-version: 1.19
-      - uses: actions/checkout@v2
-
-      - uses: imjasonh/setup-ko@v0.6
-        env:
-          KO_DOCKER_REPO: tsuru
-      - env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-          KO_DEFAULTBASEIMAGE: alpine:3.17.1
-          TO_BUILD_TAG: ${{ steps.smarttag.outputs.tag }}
-        run: |
-          export TAGS=$(echo -n "${TO_BUILD_TAG}" | sed 's/://g')
-          echo "Lets build tags: ${TAGS}"
-          echo "${DOCKERHUB_PASSWORD}" | ko login docker.io --username ${DOCKERHUB_USERNAME} --password-stdin
-          ko build -B --platform linux/arm64,linux/amd64 -t ${TAGS}
+          script: |
+            var tag_re = /:/g
+            var orig_tags = `${{steps.smarttag.outputs.tag}}`
+            return orig_tags.replace(tag_re,"")
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - uses: docker/build-push-action@v5
+        with:
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.handle_tag.outputs.result }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
+          platforms: linux/amd64,linux/arm64
