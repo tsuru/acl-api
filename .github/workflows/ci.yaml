@@ -38,14 +38,6 @@ jobs:
           docker_image: "tsuru/acl-api"
           default_branch: main
           tag_with_sha: "true"
-      - name: Handle smart-tag to proper tag var
-        uses: actions/github-script@v6
-        id: handle_tag
-        with:
-          script: |
-            var tag_re = /:/g
-            var orig_tags = `${{steps.smarttag.outputs.tag}}`
-            return orig_tags.replace(tag_re,"")
       - uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -54,7 +46,7 @@ jobs:
         with:
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.handle_tag.outputs.result }}
+          tags: ${{ steps.smarttag.outputs.tag }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
           platforms: linux/amd64,linux/arm64
