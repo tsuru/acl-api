@@ -6,7 +6,6 @@ package api
 
 import (
 	"github.com/google/gops/agent"
-	"github.com/tsuru/acl-api/engine"
 )
 
 func StartWorker() error {
@@ -16,7 +15,5 @@ func StartWorker() error {
 	defer agent.Close()
 
 	setupEngine()
-	go handleSignals(shutdownEngine)
-	engine.RunPeriodicSync()
 	return nil
 }

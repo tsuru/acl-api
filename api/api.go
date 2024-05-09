@@ -42,14 +42,6 @@ func shutdownEcho(e *echo.Echo) {
 	}
 }
 
-func shutdownEngine() {
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
-	defer cancel()
-	if err := engine.ShutdownPeriodicSync(ctx); err != nil {
-		logrus.Errorf("unable to shutdown periodic sync: %v", err)
-	}
-}
-
 func shouldSkipAuth(path string) bool {
 	return strings.HasPrefix(path, "/plugin") || path == "/healthcheck" || path == "/metrics"
 }
@@ -172,7 +164,6 @@ func StartAPI() error {
 	defer agent.Close()
 
 	setupEngine()
-	go engine.RunPeriodicSync()
 
 	e := setupEcho()
 	go handleSignals(func() {
@@ -181,7 +172,6 @@ func StartAPI() error {
 
 	err := e.Start(fmt.Sprintf(":%d", viper.GetInt("port")))
 	logrus.Infof("Shutting down server: %v", err)
-	shutdownEngine()
 	if err != nil && err != http.ErrServerClosed {
 		return err
 	}

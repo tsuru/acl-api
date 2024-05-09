@@ -5,7 +5,6 @@
 package engine
 
 import (
-	"context"
 	"encoding/json"
 	"sync"
 	"time"
@@ -65,7 +64,6 @@ type EngineWithHooks interface {
 
 var (
 	enabledEngines []func() Engine
-	quitCh         = make(chan struct{})
 )
 
 func syncRule(log *logrus.Entry, ruleSvc rule.EngineRuleService, e Engine, r types.Rule, force bool) (err error) {
@@ -151,50 +149,8 @@ func engineSync(e Engine, rules []types.Rule, logicCache rule.LogicCache, force 
 	}
 }
 
-func syncAllRules() error {
-	logrus.Info("Starting sync engines")
-	defer logrus.Info("Done sync engines")
-	ruleSvc := rule.GetServiceForEngine()
-	rules, err := ruleSvc.FindAll()
-	if err != nil {
-		return err
-	}
-	SyncRules(rules, false)
-	return nil
-}
-
 func EnableEngine(eng func() Engine) {
 	enabledEngines = append(enabledEngines, eng)
-}
-
-func ShutdownPeriodicSync(ctx context.Context) error {
-	select {
-	case quitCh <- struct{}{}:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-}
-
-func RunPeriodicSync() {
-	logrus.Info("Starting sync loop")
-	if viper.GetBool("sync.disabled") {
-		return
-	}
-
-	for {
-		syncInterval := viper.GetDuration("sync.interval")
-		err := syncAllRules()
-		if err != nil {
-			logrus.Errorf("error trying to run sync engines: %v", err)
-		}
-		select {
-		case <-time.After(syncInterval):
-		case <-quitCh:
-			logrus.Info("Stopping sync loop")
-			return
-		}
-	}
 }
 
 func SyncRules(rules []types.Rule, force bool) {
