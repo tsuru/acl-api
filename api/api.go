@@ -220,4 +220,10 @@ func configHandlers(e *echo.Echo) {
 	e.POST("/apps/:app/sync", appForceSyncRule)
 
 	e.GET("/jobs/:job/rules", jobRules)
+
+	e.GET("/healthcheck", healthcheck)
+}
+
+func healthcheck(c echo.Context) error {
+	return c.String(http.StatusOK, "OK")
 }
