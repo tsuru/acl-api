@@ -671,7 +671,7 @@ func Test_RuleService_FindByRule(t *testing.T) {
 	}{
 		{
 			filter:          types.Rule{},
-			expectedRuleIDs: []string{"1", "2", "3", "4"},
+			expectedRuleIDs: []string{"1", "2"},
 		},
 		{
 			filter: types.Rule{
@@ -732,7 +732,7 @@ func Test_RuleService_FindByRule(t *testing.T) {
 			filter: types.Rule{
 				Creator: "user9",
 			},
-			expectedRuleIDs: []string{"3"},
+			expectedRuleIDs: []string{},
 		},
 		{
 			filter: types.Rule{
@@ -751,11 +751,14 @@ func Test_RuleService_FindByRule(t *testing.T) {
 			}
 			var expectedRules []types.Rule
 			for _, id := range tt.expectedRuleIDs {
+				foundRule := false
 				for _, rule := range rules {
 					if id == rule.RuleID {
 						expectedRules = append(expectedRules, rule)
+						foundRule = true
 					}
 				}
+				assert.True(t, foundRule, "rule with id %q not found in test", id)
 			}
 			assert.Equal(t, expectedRules, foundRules)
 		})
