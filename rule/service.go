@@ -121,6 +121,14 @@ func ruleTypeMatch(ruleType types.RuleType, filter types.RuleType) bool {
 			return false
 		}
 	}
+	if filter.TsuruJob != nil {
+		if ruleType.TsuruJob == nil {
+			return false
+		}
+		if filter.TsuruJob.JobName != "" && filter.TsuruJob.JobName != ruleType.TsuruJob.JobName {
+			return false
+		}
+	}
 	if filter.KubernetesService != nil {
 		if ruleType.KubernetesService == nil {
 			return false
