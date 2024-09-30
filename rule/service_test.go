@@ -658,6 +658,39 @@ func Test_RuleService_FindByRule(t *testing.T) {
 				"x": "y",
 			},
 		},
+		{
+			RuleID: "3",
+			Source: types.RuleType{
+				TsuruJob: &types.TsuruJobRule{
+					JobName: "my-job",
+				},
+			},
+			Destination: types.RuleType{
+				ExternalDNS: &types.ExternalDNSRule{
+					Name:  "job-api.com",
+					Ports: []types.ProtoPort{},
+				},
+			},
+			Metadata: map[string]string{
+				"y": "z",
+			},
+		},
+		{
+			RuleID: "4",
+			Source: types.RuleType{
+				TsuruApp: &types.TsuruAppRule{
+					AppName: "myapp",
+				},
+			},
+			Destination: types.RuleType{
+				TsuruJob: &types.TsuruJobRule{
+					JobName: "my-job",
+				},
+			},
+			Metadata: map[string]string{
+				"key": "value",
+			},
+		},
 	}
 	svc := GetService()
 	for _, r := range rules {
@@ -708,7 +741,7 @@ func Test_RuleService_FindByRule(t *testing.T) {
 					TsuruApp: &types.TsuruAppRule{},
 				},
 			},
-			expectedRuleIDs: []string{"1"},
+			expectedRuleIDs: []string{"1", "4"},
 		},
 		{
 			filter: types.Rule{
@@ -732,13 +765,33 @@ func Test_RuleService_FindByRule(t *testing.T) {
 			filter: types.Rule{
 				Creator: "user9",
 			},
-			expectedRuleIDs: []string{"3"},
+			expectedRuleIDs: []string{},
 		},
 		{
 			filter: types.Rule{
 				Creator: "user-invalid",
 			},
 			expectedRuleIDs: []string{},
+		},
+		{
+			filter: types.Rule{
+				Source: types.RuleType{
+					TsuruJob: &types.TsuruJobRule{
+						JobName: "my-job",
+					},
+				},
+			},
+			expectedRuleIDs: []string{"3"},
+		},
+		{
+			filter: types.Rule{
+				Destination: types.RuleType{
+					TsuruJob: &types.TsuruJobRule{
+						JobName: "my-job",
+					},
+				},
+			},
+			expectedRuleIDs: []string{"4"},
 		},
 	}
 
@@ -751,11 +804,14 @@ func Test_RuleService_FindByRule(t *testing.T) {
 			}
 			var expectedRules []types.Rule
 			for _, id := range tt.expectedRuleIDs {
+				foundRule := false
 				for _, rule := range rules {
 					if id == rule.RuleID {
 						expectedRules = append(expectedRules, rule)
+						foundRule = true
 					}
 				}
+				assert.True(t, foundRule, "rule with id %q not found in test", id)
 			}
 			assert.Equal(t, expectedRules, foundRules)
 		})
