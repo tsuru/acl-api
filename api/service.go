@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/tsuru/acl-api/api/types"
 	"github.com/tsuru/acl-api/engine"
 	"github.com/tsuru/acl-api/rule"
@@ -20,6 +20,18 @@ import (
 	"github.com/tsuru/acl-api/storage"
 )
 
+// serviceCreate creates a Tsuru service instance.
+// @Summary Create a service instance
+// @Tags service-resources
+// @Accept application/x-www-form-urlencoded
+// @Param name formData string true "Instance name"
+// @Param user formData string false "Creator"
+// @Param eventid formData string false "Tsuru event ID"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources [post]
 func serviceCreate(c echo.Context) error {
 	var instance types.ServiceInstance
 	instance.InstanceName = c.FormValue("name")
@@ -33,6 +45,16 @@ func serviceCreate(c echo.Context) error {
 	return c.String(http.StatusOK, "")
 }
 
+// serviceUpdate checks that a service instance exists; it has no update behavior.
+// @Summary Update a service instance
+// @Tags service-resources
+// @Param instance path string true "Instance name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200
+// @Failure 404
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources/{instance} [put]
 func serviceUpdate(c echo.Context) error {
 	// serviceUpdate is a no-op operation
 	// just check if service exists
@@ -52,6 +74,15 @@ func serviceUpdate(c echo.Context) error {
 	return c.String(http.StatusOK, "")
 }
 
+// serviceDelete removes a service instance.
+// @Summary Delete a service instance
+// @Tags service-resources
+// @Param instance path string true "Instance name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources/{instance} [delete]
 func serviceDelete(c echo.Context) error {
 	instanceName := c.Param("instance")
 	svc := service.GetService()
@@ -62,6 +93,14 @@ func serviceDelete(c echo.Context) error {
 	return c.String(http.StatusOK, "")
 }
 
+// serviceStatus returns the service-broker status response.
+// @Summary Get service instance status
+// @Tags service-resources
+// @Param instance path string true "Instance name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200
+// @Security BasicAuth
+// @Router /resources/{instance}/status [get]
 func serviceStatus(c echo.Context) error {
 	return nil
 }
@@ -71,6 +110,16 @@ type infoItem struct {
 	Value string `json:"value"`
 }
 
+// serviceInfo returns human-readable information about an instance.
+// @Summary Get service instance information
+// @Tags service-resources
+// @Produce json
+// @Param instance path string true "Instance name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200 {array} infoItem
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources/{instance} [get]
 func serviceInfo(c echo.Context) error {
 	instanceName := c.Param("instance")
 	svc := service.GetService()
@@ -90,6 +139,19 @@ func serviceInfo(c echo.Context) error {
 	return c.JSON(http.StatusOK, []infoItem{item})
 }
 
+// serviceBindApp binds a service instance to an application.
+// @Summary Bind an application
+// @Tags service-resources
+// @Accept application/x-www-form-urlencoded
+// @Produce json
+// @Param instance path string true "Instance name"
+// @Param app-name formData string true "Application name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200 {object} EmptyResponse
+// @Failure 400 {object} APIError
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources/{instance}/bind-app [post]
 func serviceBindApp(c echo.Context) error {
 	instanceName := c.Param("instance")
 	appName := c.FormValue("app-name")
@@ -105,6 +167,18 @@ func serviceBindApp(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{})
 }
 
+// serviceUnbindApp removes an application binding.
+// @Summary Unbind an application
+// @Tags service-resources
+// @Accept application/x-www-form-urlencoded
+// @Param instance path string true "Instance name"
+// @Param app-name formData string true "Application name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200
+// @Failure 400 {object} APIError
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources/{instance}/bind-app [delete]
 func serviceUnbindApp(c echo.Context) error {
 	req := c.Request()
 	data, err := ioutil.ReadAll(req.Body)
@@ -128,6 +202,18 @@ func serviceUnbindApp(c echo.Context) error {
 	return c.String(http.StatusOK, "")
 }
 
+// serviceBindJob binds a service instance to a job.
+// @Summary Bind a job
+// @Tags service-resources
+// @Produce json
+// @Param instance path string true "Instance name"
+// @Param job path string true "Job name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200 {object} EmptyResponse
+// @Failure 400 {object} APIError
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources/{instance}/binds/jobs/{job} [put]
 func serviceBindJob(c echo.Context) error {
 	instanceName := c.Param("instance")
 	jobName := c.Param("job")
@@ -143,6 +229,17 @@ func serviceBindJob(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{})
 }
 
+// serviceUnbindJob removes a job binding.
+// @Summary Unbind a job
+// @Tags service-resources
+// @Param instance path string true "Instance name"
+// @Param job path string true "Job name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200
+// @Failure 400 {object} APIError
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources/{instance}/binds/jobs/{job} [delete]
 func serviceUnbindJob(c echo.Context) error {
 	jobName := c.Param("job")
 	instanceName := c.Param("instance")
@@ -158,16 +255,41 @@ func serviceUnbindJob(c echo.Context) error {
 	return c.String(http.StatusOK, "")
 }
 
+// serviceBindUnit is a no-op required by the Tsuru service-broker contract.
+// @Summary Bind a unit
+// @Tags service-resources
+// @Param instance path string true "Instance name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200
+// @Security BasicAuth
+// @Router /resources/{instance}/bind [post]
 func serviceBindUnit(c echo.Context) error {
 	// noop
 	return nil
 }
 
+// serviceUnbindUnit is a no-op required by the Tsuru service-broker contract.
+// @Summary Unbind a unit
+// @Tags service-resources
+// @Param instance path string true "Instance name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200
+// @Security BasicAuth
+// @Router /resources/{instance}/bind [delete]
 func serviceUnbindUnit(c echo.Context) error {
 	// noop
 	return nil
 }
 
+// listServices lists service instances.
+// @Summary List service instances
+// @Tags service-resources
+// @Produce json
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200 {array} types.ServiceInstance
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /services [get]
 func listServices(c echo.Context) error {
 	svc := service.GetService()
 	sis, err := svc.List()
@@ -183,6 +305,16 @@ type serviceRuleData struct {
 	RulesSync       []types.RuleSyncInfo
 }
 
+// serviceListRules returns the instance, its expanded rules, and their synchronization data.
+// @Summary List service instance rules
+// @Tags service-resources
+// @Produce json
+// @Param instance path string true "Instance name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200 {object} serviceRuleData
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources/{instance}/rule [get]
 func serviceListRules(c echo.Context) error {
 	instanceName := c.Param("instance")
 	svc := service.GetService()
@@ -213,6 +345,22 @@ func serviceListRules(c echo.Context) error {
 	})
 }
 
+// serviceAddRule adds a rule to a service instance.
+// @Summary Add a service instance rule
+// @Tags service-resources
+// @Accept json
+// @Produce json
+// @Param instance path string true "Instance name"
+// @Param rule body types.ServiceRule true "Service rule"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Param X-Tsuru-User header string false "Tsuru user"
+// @Param X-Tsuru-Eventid header string false "Tsuru event ID"
+// @Success 200 {object} types.ServiceRule
+// @Failure 400 {object} APIError
+// @Failure 409 {object} APIError
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources/{instance}/rule [post]
 func serviceAddRule(c echo.Context) error {
 	instanceName := c.Param("instance")
 	r := &types.ServiceRule{}
@@ -242,6 +390,16 @@ func serviceAddRule(c echo.Context) error {
 	return c.JSON(http.StatusOK, r)
 }
 
+// serviceRemoveRule removes a rule from a service instance.
+// @Summary Remove a service instance rule
+// @Tags service-resources
+// @Param instance path string true "Instance name"
+// @Param rule path string true "Rule ID"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources/{instance}/rule/{rule} [delete]
 func serviceRemoveRule(c echo.Context) error {
 	instanceName := c.Param("instance")
 	ruleID := c.Param("rule")
@@ -253,6 +411,15 @@ func serviceRemoveRule(c echo.Context) error {
 	return c.String(http.StatusOK, "")
 }
 
+// serviceForceSyncRule synchronizes all rules for a service instance.
+// @Summary Synchronize service instance rules
+// @Tags service-resources
+// @Param instance path string true "Instance name"
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200
+// @Failure 500 {object} APIError
+// @Security BasicAuth
+// @Router /resources/{instance}/sync [post]
 func serviceForceSyncRule(c echo.Context) error {
 	instanceName := c.Param("instance")
 	rulesSvc := rule.GetService()
@@ -270,6 +437,14 @@ func serviceForceSyncRule(c echo.Context) error {
 	return nil
 }
 
+// servicePlans lists service plans; ACL API currently has no plans.
+// @Summary List service plans
+// @Tags service-resources
+// @Produce json
+// @Param X-Request-ID header string false "Request correlation ID"
+// @Success 200 {array} EmptyResponse
+// @Security BasicAuth
+// @Router /resources/plans [get]
 func servicePlans(c echo.Context) error {
 	return c.JSONBlob(http.StatusOK, []byte("[]"))
 }

@@ -1,0 +1,1034 @@
+basePath: /
+definitions:
+  api.APIError:
+    properties:
+      message:
+        type: string
+    type: object
+  api.EmptyResponse:
+    type: object
+  api.SyncCountResponse:
+    properties:
+      count:
+        type: integer
+    type: object
+  api.infoItem:
+    properties:
+      label:
+        type: string
+      value:
+        type: string
+    type: object
+  api.serviceRuleData:
+    properties:
+      ExpandedRules:
+        items:
+          $ref: '#/definitions/types.Rule'
+        type: array
+      RulesSync:
+        items:
+          $ref: '#/definitions/types.RuleSyncInfo'
+        type: array
+      ServiceInstance:
+        $ref: '#/definitions/types.ServiceInstance'
+    type: object
+  types.ExternalDNSRule:
+    properties:
+      Name:
+        type: string
+      Ports:
+        items:
+          $ref: '#/definitions/types.ProtoPort'
+        type: array
+      SyncWholeNetwork:
+        type: boolean
+    type: object
+  types.ExternalIPRule:
+    properties:
+      IP:
+        type: string
+      Ports:
+        items:
+          $ref: '#/definitions/types.ProtoPort'
+        type: array
+      SyncWholeNetwork:
+        type: boolean
+    type: object
+  types.KubernetesServiceRule:
+    properties:
+      ClusterName:
+        type: string
+      Namespace:
+        type: string
+      ServiceName:
+        type: string
+    type: object
+  types.ProtoPort:
+    properties:
+      Port:
+        format: int32
+        type: integer
+      Protocol:
+        type: string
+    type: object
+  types.RpaasInstanceRule:
+    properties:
+      Instance:
+        type: string
+      ServiceName:
+        type: string
+    type: object
+  types.Rule:
+    properties:
+      Created:
+        type: string
+      Creator:
+        type: string
+      Destination:
+        $ref: '#/definitions/types.RuleType'
+      Metadata:
+        additionalProperties:
+          type: string
+        type: object
+      Removed:
+        type: boolean
+      RuleID:
+        type: string
+      RuleName:
+        type: string
+      Source:
+        $ref: '#/definitions/types.RuleType'
+    type: object
+  types.RuleSyncData:
+    properties:
+      EndTime:
+        type: string
+      Error:
+        type: string
+      Removed:
+        type: boolean
+      StartTime:
+        type: string
+      Successful:
+        type: boolean
+      SyncResult:
+        type: string
+    type: object
+  types.RuleSyncInfo:
+    properties:
+      EndTime:
+        type: string
+      Engine:
+        type: string
+      PingTime:
+        type: string
+      RuleID:
+        type: string
+      Running:
+        type: boolean
+      StartTime:
+        type: string
+      SyncID:
+        type: string
+      Syncs:
+        items:
+          $ref: '#/definitions/types.RuleSyncData'
+        type: array
+    type: object
+  types.RuleType:
+    properties:
+      ExternalDNS:
+        $ref: '#/definitions/types.ExternalDNSRule'
+      ExternalIP:
+        $ref: '#/definitions/types.ExternalIPRule'
+      KubernetesService:
+        $ref: '#/definitions/types.KubernetesServiceRule'
+      RpaasInstance:
+        $ref: '#/definitions/types.RpaasInstanceRule'
+      TsuruApp:
+        $ref: '#/definitions/types.TsuruAppRule'
+      TsuruJob:
+        $ref: '#/definitions/types.TsuruJobRule'
+    type: object
+  types.ServiceInstance:
+    properties:
+      BaseRules:
+        items:
+          $ref: '#/definitions/types.ServiceRule'
+        type: array
+      BindApps:
+        items:
+          type: string
+        type: array
+      BindJobs:
+        items:
+          type: string
+        type: array
+      Creator:
+        type: string
+      EventID:
+        type: string
+      InstanceName:
+        type: string
+    type: object
+  types.ServiceRule:
+    properties:
+      Created:
+        type: string
+      Creator:
+        type: string
+      Destination:
+        $ref: '#/definitions/types.RuleType'
+      EventID:
+        type: string
+      Metadata:
+        additionalProperties:
+          type: string
+        type: object
+      Removed:
+        type: boolean
+      RuleID:
+        type: string
+      RuleName:
+        type: string
+      Source:
+        $ref: '#/definitions/types.RuleType'
+    type: object
+  types.TsuruAppRule:
+    properties:
+      AppName:
+        type: string
+      PoolName:
+        type: string
+    type: object
+  types.TsuruJobRule:
+    properties:
+      JobName:
+        type: string
+    type: object
+info:
+  contact:
+    name: Tsuru
+    url: https://github.com/tsuru/acl-api
+  description: ACL API stores network access rules consumed by acl-operator.
+  license:
+    name: BSD 3-Clause License
+    url: https://github.com/tsuru/acl-api/blob/main/LICENSE
+  title: ACL API
+  version: Set when compiling
+paths:
+  /apps/{app}/rules:
+    get:
+      parameters:
+      - description: Application name
+        in: path
+        name: app
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.Rule'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: List application rules
+      tags:
+      - applications
+  /apps/{app}/sync:
+    post:
+      parameters:
+      - description: Application name
+        in: path
+        name: app
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.SyncCountResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Synchronize application rules
+      tags:
+      - applications
+  /jobs/{job}/rules:
+    get:
+      parameters:
+      - description: Job name
+        in: path
+        name: job
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.Rule'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: List job rules
+      tags:
+      - jobs
+  /resources:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      parameters:
+      - description: Instance name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Creator
+        in: formData
+        name: user
+        type: string
+      - description: Tsuru event ID
+        in: formData
+        name: eventid
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Create a service instance
+      tags:
+      - service-resources
+  /resources/{instance}:
+    delete:
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Delete a service instance
+      tags:
+      - service-resources
+    get:
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.infoItem'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Get service instance information
+      tags:
+      - service-resources
+    put:
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Update a service instance
+      tags:
+      - service-resources
+  /resources/{instance}/bind:
+    delete:
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+      security:
+      - BasicAuth: []
+      summary: Unbind a unit
+      tags:
+      - service-resources
+    post:
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+      security:
+      - BasicAuth: []
+      summary: Bind a unit
+      tags:
+      - service-resources
+  /resources/{instance}/bind-app:
+    delete:
+      consumes:
+      - application/x-www-form-urlencoded
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Application name
+        in: formData
+        name: app-name
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Unbind an application
+      tags:
+      - service-resources
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Application name
+        in: formData
+        name: app-name
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.EmptyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Bind an application
+      tags:
+      - service-resources
+  /resources/{instance}/binds/jobs/{job}:
+    delete:
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Job name
+        in: path
+        name: job
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Unbind a job
+      tags:
+      - service-resources
+    put:
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Job name
+        in: path
+        name: job
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.EmptyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Bind a job
+      tags:
+      - service-resources
+  /resources/{instance}/rule:
+    get:
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.serviceRuleData'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: List service instance rules
+      tags:
+      - service-resources
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Service rule
+        in: body
+        name: rule
+        required: true
+        schema:
+          $ref: '#/definitions/types.ServiceRule'
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      - description: Tsuru user
+        in: header
+        name: X-Tsuru-User
+        type: string
+      - description: Tsuru event ID
+        in: header
+        name: X-Tsuru-Eventid
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.ServiceRule'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Add a service instance rule
+      tags:
+      - service-resources
+  /resources/{instance}/rule/{rule}:
+    delete:
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Rule ID
+        in: path
+        name: rule
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Remove a service instance rule
+      tags:
+      - service-resources
+  /resources/{instance}/status:
+    get:
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+      security:
+      - BasicAuth: []
+      summary: Get service instance status
+      tags:
+      - service-resources
+  /resources/{instance}/sync:
+    post:
+      parameters:
+      - description: Instance name
+        in: path
+        name: instance
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Synchronize service instance rules
+      tags:
+      - service-resources
+  /resources/plans:
+    get:
+      parameters:
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.EmptyResponse'
+            type: array
+      security:
+      - BasicAuth: []
+      summary: List service plans
+      tags:
+      - service-resources
+  /rules:
+    get:
+      parameters:
+      - description: Rule ID
+        in: query
+        name: RuleID
+        type: string
+      - description: Rule name
+        in: query
+        name: RuleName
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.Rule'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: List rules
+      tags:
+      - rules
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Rule
+        in: body
+        name: rule
+        required: true
+        schema:
+          $ref: '#/definitions/types.Rule'
+      - description: Wait for synchronization before responding
+        in: query
+        name: wait-sync
+        type: boolean
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/types.Rule'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Create a rule
+      tags:
+      - rules
+  /rules/{id}:
+    delete:
+      parameters:
+      - description: Rule ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Delete a rule
+      tags:
+      - rules
+    get:
+      parameters:
+      - description: Rule ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.Rule'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Get a rule
+      tags:
+      - rules
+  /rules/{id}/sync:
+    get:
+      parameters:
+      - description: Rule ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.RuleSyncInfo'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Get rule synchronization data
+      tags:
+      - rules
+    post:
+      parameters:
+      - description: Rule ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.APIError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: Synchronize a rule
+      tags:
+      - rules
+  /rules/sync:
+    get:
+      parameters:
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.RuleSyncInfo'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: List rule synchronization data
+      tags:
+      - rules
+  /services:
+    get:
+      parameters:
+      - description: Request correlation ID
+        in: header
+        name: X-Request-ID
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/types.ServiceInstance'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.APIError'
+      security:
+      - BasicAuth: []
+      summary: List service instances
+      tags:
+      - service-resources
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"

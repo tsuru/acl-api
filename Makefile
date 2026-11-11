@@ -1,8 +1,14 @@
 GO_BUILD_DIR ?= ./bin
 
-.PHONY: fmt
+.PHONY: fmt swagger swagger-check
 fmt: ## Run go fmt against code.
 	go fmt ./...
+
+swagger: ## Generate Swagger 2.0 documentation from API annotations.
+	go run github.com/swaggo/swag/cmd/swag@v1.16.6 init --generalInfo api/api.go --output docs --propertyStrategy pascalcase
+
+swagger-check: swagger ## Verify generated Swagger documentation is committed.
+	git diff --exit-code -- docs
 
 .PHONY: vet
 vet: ## Run go vet against code.

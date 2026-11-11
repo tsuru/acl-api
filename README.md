@@ -1,6 +1,12 @@
 # acl-api
 API that stores rules of network to be consumed by acl-operator
 
+## API documentation
+
+Run `make swagger` after changing an HTTP handler annotation or a documented API type.
+The generated Swagger UI is available at `/swagger/index.html`; its specification is
+available as `/swagger/doc.json` and `/swagger/doc.yaml`.
+
 
 # Architecture
 

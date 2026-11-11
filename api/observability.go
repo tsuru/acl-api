@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/opentracing/opentracing-go"
 	opentracingExt "github.com/opentracing/opentracing-go/ext"
 	jaegerConfig "github.com/uber/jaeger-client-go/config"

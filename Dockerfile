@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine3.18 AS builder
+FROM golang:1.27.4-alpine AS builder
 COPY . /go/src/github.com/tsuru/acl-api
 WORKDIR /go/src/github.com/tsuru/acl-api
 RUN set -x \
