@@ -23,7 +23,7 @@ import (
 	"github.com/spf13/viper"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"github.com/tsuru/acl-api/api/version"
-	_ "github.com/tsuru/acl-api/docs"
+	"github.com/tsuru/acl-api/docs"
 	"github.com/tsuru/acl-api/engine"
 	"github.com/tsuru/acl-api/engine/operator"
 	_ "github.com/tsuru/acl-api/storage/mongodb"
@@ -127,7 +127,7 @@ func setupEcho() *echo.Echo {
 			code = he.Code
 			msg = he.Message
 			if he.Internal != nil {
-				msg = fmt.Sprintf("%v, %v", err, he.Internal)
+				msg = err.Error()
 			}
 		} else {
 			msg = err.Error()
@@ -155,6 +155,10 @@ func setupEcho() *echo.Echo {
 
 	configHandlers(e)
 	return e
+}
+
+func init() {
+	docs.SwaggerInfo.Version = version.Version
 }
 
 var allEngines = []func() engine.Engine{

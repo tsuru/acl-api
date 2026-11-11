@@ -7,6 +7,7 @@ package api
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tsuru/acl-api/api/version"
 )
 
 func TestAuthentication(t *testing.T) {
@@ -126,11 +128,15 @@ func TestSwaggerDocumentationIsPublic(t *testing.T) {
 	defer response.Body.Close()
 
 	var document struct {
-		Swagger string                     `json:"swagger"`
-		Paths   map[string]json.RawMessage `json:"paths"`
+		Swagger string `json:"swagger"`
+		Info    struct {
+			Version string `json:"version"`
+		} `json:"info"`
+		Paths map[string]json.RawMessage `json:"paths"`
 	}
 	require.NoError(t, json.NewDecoder(response.Body).Decode(&document))
 	assert.Equal(t, "2.0", document.Swagger)
+	assert.Equal(t, version.Version, document.Info.Version)
 	assert.Contains(t, document.Paths, "/rules")
 	assert.Contains(t, document.Paths, "/resources/{instance}/rule")
 
@@ -139,4 +145,19 @@ func TestSwaggerDocumentationIsPublic(t *testing.T) {
 	defer response.Body.Close()
 	assert.Equal(t, http.StatusUnauthorized, response.StatusCode)
 	assert.True(t, strings.HasPrefix(response.Header.Get("WWW-Authenticate"), "Basic"))
+}
+
+func TestHTTPErrorWithInternalError(t *testing.T) {
+	e := setupEcho()
+	e.GET("/test-error", func(c echo.Context) error {
+		return echo.NewHTTPError(http.StatusBadRequest, "bad request").SetInternal(errors.New("underlying failure"))
+	})
+	recorder := httptest.NewRecorder()
+	e.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/test-error", nil))
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+	var body struct {
+		Message string `json:"message"`
+	}
+	require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &body))
+	assert.Equal(t, "code=400, message=bad request, internal=underlying failure", body.Message)
 }
